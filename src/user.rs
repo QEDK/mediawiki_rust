@@ -22,8 +22,8 @@ use std::error::Error;
 /// `User` contains the login data for the `Api`
 #[derive(Debug, Default, Clone)]
 pub struct User {
-    lgusername: String,
-    lguserid: u64,
+    lgusername: Option<String>,
+    lguserid: Option<u64>,
     is_logged_in: bool,
     user_info: Option<Value>,
 }
@@ -32,8 +32,8 @@ impl User {
     /// Returns a new, blank, not-logged-in user
     pub fn new() -> User {
         User {
-            lgusername: "".into(),
-            lguserid: 0,
+            lgusername: None,
+            lguserid: None,
             is_logged_in: false,
             user_info: None,
         }
@@ -45,7 +45,7 @@ impl User {
     }
 
     /// Checks is the user has a spefic right (e.g. "bot", "autocinfirmed")
-    pub fn has_right(&self, right: &str) -> bool {
+    pub fn has_right(&self, right: &str) -> Option<bool> {
         match &self.user_info {
             Some(ui) => {
                 ui["query"]["userinfo"]["rights"]
@@ -56,49 +56,49 @@ impl User {
                     .count()
                     > 0
             }
-            None => false,
+            None => None,
         }
     }
 
     /// Checks if the user has a bot flag
-    pub fn is_bot(&self) -> bool {
+    pub fn is_bot(&self) -> Option<bool> {
         self.has_right("bot")
     }
 
     /// Checks if the user is autoconfirmed
-    pub fn is_autoconfirmed(&self) -> bool {
+    pub fn is_autoconfirmed(&self) -> Option<bool> {
         self.has_right("autoconfirmed")
     }
 
     /// Checks if the user is allowed to edit
-    pub fn can_edit(&self) -> bool {
+    pub fn can_edit(&self) -> Option<bool> {
         self.has_right("edit")
     }
 
     /// Checks if the user is allowed to create a page
-    pub fn can_create_page(&self) -> bool {
+    pub fn can_create_page(&self) -> Option<bool> {
         self.has_right("createpage")
     }
 
     /// Checks if the user is allowed to upload a file
-    pub fn can_upload(&self) -> bool {
+    pub fn can_upload(&self) -> Option<bool> {
         self.has_right("upload")
     }
 
     /// Checks if the user is allowed to move (rename) a page
-    pub fn can_move(&self) -> bool {
+    pub fn can_move(&self) -> Option<bool> {
         self.has_right("move")
     }
 
     /// Checks if the user is allowed to patrol edits
-    pub fn can_patrol(&self) -> bool {
+    pub fn can_patrol(&self) -> Option<bool> {
         self.has_right("patrol")
     }
 
     /// Loads the user info, which is stored in the object; returns Ok(()) if successful
     pub fn load_user_info(&mut self, api: &Api) -> Result<(), Box<dyn Error>> {
         match self.user_info {
-            Some(_) => return Ok(()),
+            Some(_) => Ok(()),
             None => {
                 let params: HashMap<String, String> = vec![
                     ("action", "query"),
@@ -115,13 +115,13 @@ impl User {
         }
     }
 
-    /// Returns the user name ("" if not logged in)
-    pub fn user_name(&self) -> &str {
-        &self.lgusername
+    /// Returns Ok(user name) (None if not logged in)
+    pub fn user_name(&self) -> Option<String> {
+        self.lgusername
     }
 
-    /// Returns the user id (0 if not logged in)
-    pub fn user_id(&self) -> u64 {
+    /// Returns Ok(user id) (None if not logged in)
+    pub fn user_id(&self) -> Option<u64> {
         self.lguserid
     }
 
@@ -129,11 +129,11 @@ impl User {
     pub fn set_from_login(&mut self, login: &Value) -> Result<(), &str> {
         if login["result"] == "Success" {
             match login["lgusername"].as_str() {
-                Some(s) => self.lgusername = s.to_string(),
+                Some(s) => self.lgusername = Some(s.to_string()),
                 None => return Err("No lgusername in login result"),
             }
             match login["lguserid"].as_u64() {
-                Some(u) => self.lguserid = u,
+                Some(u) => self.lguserid = Some(u),
                 None => return Err("No lguserid in login result"),
             }
 
